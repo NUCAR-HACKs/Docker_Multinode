@@ -1,0 +1,4 @@
+# Run on slaves
+docker run -it --network=host image_name bash -c "service ssh start; bash"
+# Run on master
+docker run --network=host image_name
