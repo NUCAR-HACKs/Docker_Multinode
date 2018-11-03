@@ -1,0 +1,25 @@
+FROM ubuntu:latest
+
+# This Example is with OpenMPI - MPICH2 has other specifications for the CMD statement
+# SSH_PORT_NO is the port number for Docker SSH -> any ssh traffic will be forwarded to the container on the node
+# /Path/To/Execution/Directory is the path to your executable (duh)
+# PROCESS_NO is the number of MPI processes you would like to run
+# ENV_VAR is any environmental variables needed to run the application
+# MPI_PORT_NO is port that MPI will listen on for connections
+
+RUN mkdir /root/.ssh
+COPY ./hostfile.txt /Path/To/Execution/Directory
+COPY ./.ssh/* /root/.ssh/
+
+RUN echo "    IdentityFile /root/.ssh/id_rsa" >> /etc/ssh/ssh_config
+RUN echo "    Port SSH_PORT_NO" >> /etc/ssh/ssh_config
+RUN echo "    Port SSH_PORT_NO" >> /etc/ssh/sshd_config
+RUN echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+
+RUN eval `ssh-agent` && ssh-add /root/.ssh/id_rsa
+RUN ssh-keygen -f "/root/.ssh/known_hosts" -R "[192.168.100.1]:SSH_PORT_NO"
+RUN ssh-keygen -f "/root/.ssh/known_hosts" -R "[192.168.100.2]:SSH_PORT_NO"
+RUN ssh-keygen -f "/root/.ssh/known_hosts" -R "[192.168.100.3]:SSH_PORT_NO"
+RUN ssh-keygen -f "/root/.ssh/known_hosts" -R "[192.168.100.4]:SSH_PORT_NO"
+
+CMD mpiexec -np PROCESS_NO -x ENV_VAR --allow-run-as-root --mca oop_tcp_static_ports MPI_PORT_NO -machinefile hostfile.txt EXECUTABLE
